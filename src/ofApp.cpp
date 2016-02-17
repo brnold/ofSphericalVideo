@@ -1,3 +1,4 @@
+
 #include "ofApp.h"
 
 //--------------------------------------------------------------
@@ -5,15 +6,15 @@ void ofApp::setup(){
     ofSetVerticalSync(true);
 
 	ratio = 3 / (double)4;
-	fov = 60;
-	precision = 100;
-	radius = 250;
+	fov = 200;
+	precision = 2000;
+	radius = 5000;
 	
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
 	
     img.setUseTexture(true);
-	img.load("aspect.png");
+	img.loadImage("0.jpg");
 	
 	// generate segment
 	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, longMin, longMax, latMin, latMax);
@@ -51,7 +52,7 @@ void ofApp::draw(){
 	ofSetColor(200, 0, 0, 50);
 	ofDrawSphere(0, 0, 5);
 	
-	this->drawFrustum();
+	//this->drawFrustum();
 
 	glDisable(GL_CULL_FACE);
 	
@@ -62,7 +63,7 @@ void ofApp::draw(){
 
 	// draw image
 	ofSetColor(255, 255);
-	img.draw(0, 0, img.getWidth(), img.getHeight());
+	//img.draw(0, 0, img.getWidth(), img.getHeight());
 	
 	// some info
 	std::stringstream info;
@@ -155,8 +156,7 @@ void ofApp::calculateFrustumSphereIntersects(double fov,
 	*latMin = -(fov * DEG_TO_RAD / 2.0 * ratio);
 	*latMax =  (fov * DEG_TO_RAD / 2.0 * ratio);
 }
-
-void ofApp::drawFrustum()
+/*void ofApp::drawFrustum()
 {
 	ofSetColor(255, 100);
 	ofPoint p;
@@ -180,7 +180,7 @@ void ofApp::drawFrustum()
 	p.y = sin(latMax);
 	p.z = cos(latMax) * sin(longMax);
 	ofDrawLine(ofPoint(0), p*radius);
-}
+}*/
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
