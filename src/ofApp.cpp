@@ -5,10 +5,10 @@
 void ofApp::setup(){
     ofSetVerticalSync(true);
 
-	ratio = 3 / (double)4;
+	ratio = 3 / (double) 6;
 	fov = 200;
 	precision = 2000;
-	radius = 5000;
+	radius = 500;
 	
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
@@ -46,11 +46,11 @@ void ofApp::draw(){
     if (img.isAllocated()) img.unbind();
 	
 	// draw transparent sphere as guide
-	ofSetColor(255, 25);
-	ofDrawSphere(0, 0, 250);
+	//ofSetColor(255, 25);
+	//ofDrawSphere(0, 0, 250);
 	
-	ofSetColor(200, 0, 0, 50);
-	ofDrawSphere(0, 0, 5);
+	//ofSetColor(200, 0, 0, 50);
+	//ofDrawSphere(0, 0, 5);
 	
 	//this->drawFrustum();
 
@@ -113,7 +113,7 @@ void ofApp::createSegmentedMesh(const ofVec3f& center,
         t1 = phi1 + j * (phi2 - phi1) / (precision/2);
         t2 = phi1 + (j + 1) * (phi2 - phi1) / (precision/2);
 
-        mesh.setMode(OF_PRIMITIVE_POINTS);
+        mesh.setMode(OF_PRIMITIVE_POINTS );
         
         for (i=0;i<=precision;i++) {
             t3 = theta1 + i * (theta2 - theta1) / precision;
