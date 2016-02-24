@@ -5,24 +5,69 @@
 void ofApp::setup(){
     ofSetVerticalSync(true);
 
-	ratio = 3 / (double) 6;
-	fov = 200;
+	
+	fov = 40;
 	precision = 2000;
-	radius = 500;
+	radius = 5000;
 	
 	// initial calculation of segment size
-	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
+	//this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
 	
+
+#if STATIC_IMAGE	
     img.setUseTexture(true);
 	img.loadImage("0.jpg");
-	
+	ratio = img.getHeight()/(double) img.getWidth();
+	//ratio = 3 / (double) 4;
+	// initial calculation of segment size
+	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
+	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, img.getWidth(), img.getHeight(), longMin, longMax, latMin, latMax);
+#endif
+
+#if VIDEO
+	 vW = 1920;
+	 vH = 1080;
+	texture1.allocate(vW,vH,GL_RGB);
+	//texture2.allocate(vW,vH,GL_RGB);
+
+	client1.setup(10);
+	client1.addVideoChannel(5000);
+	//client2.setup(10);
+	//client2.addVideoChannel(5001);
+	client1.play();
+	//client2.play();
+	ratio = vH/ (double) vW;
+	// initial calculation of segment size
+	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
+	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, vW, vH, longMin, longMax, latMin, latMax);
+#endif	
+
 	// generate segment
-	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, longMin, longMax, latMin, latMax);
+	//this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, width, height, longMin, longMax, latMin, latMax);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+#if VIDEO
 
+
+	client1.update();
+	//client2.update();
+	
+	if(!STATIC_IMAGE){
+		if(client1.isFrameNewVideo()){
+			texture1.loadData(client1.getPixelsVideo());
+			//temp
+			//texture2.loadData(client1.getPixelsVideo());
+		}
+
+
+
+		//if(client2.isFrameNewVideo()){
+		//	texture2.loadData(client2.getPixelsVideo());
+		//}
+	}
+#endif
 }
 
 //--------------------------------------------------------------
@@ -41,10 +86,18 @@ void ofApp::draw(){
 	
 	// bind texture and draw our segment
     ofSetColor(255, 150);
+   
+#if STATIC_IMAGE    
     if (img.isAllocated()) img.bind();
     mesh.draw();
     if (img.isAllocated()) img.unbind();
-	
+#endif
+
+#if VIDEO
+	texture1.bind();
+	mesh.draw();
+	texture1.unbind();
+#endif	
 	// draw transparent sphere as guide
 	//ofSetColor(255, 25);
 	//ofDrawSphere(0, 0, 250);
@@ -83,6 +136,8 @@ void ofApp::draw(){
 void ofApp::createSegmentedMesh(const ofVec3f& center,
                                 double radius,
                                 int precision,
+                                int textWidth,
+                                int textHeight,
                                 double theta1, double theta2,
                                 double phi1, double phi2)
 {
@@ -125,8 +180,8 @@ void ofApp::createSegmentedMesh(const ofVec3f& center,
             p.y = center.y + radius * e.y;
             p.z = center.z + radius * e.z;
             mesh.addNormal(e);
-            mesh.addTexCoord(ofVec2f( (i/(double)precision) * img.getWidth(),
-                                      img.getHeight() - (2*j/(double)precision) * img.getHeight()));
+            mesh.addTexCoord(ofVec2f( (i/(double)precision) * textWidth,
+                                      textHeight - (2*j/(double)precision) * textHeight));
             mesh.addVertex(p);
             
             e.x = cos(t2) * cos(t3);
@@ -136,8 +191,8 @@ void ofApp::createSegmentedMesh(const ofVec3f& center,
             p.y = center.y + radius * e.y;
             p.z = center.z + radius * e.z;
             mesh.addNormal(e);
-            mesh.addTexCoord(ofVec2f( (i/(double)precision) * img.getWidth(),
-                                      img.getHeight() - (2*(j+1)/(double)precision) * img.getHeight()));
+            mesh.addTexCoord(ofVec2f( (i/(double)precision) * textWidth,
+                                      textHeight - (2*(j+1)/(double)precision) * textHeight));
             mesh.addVertex(p);
 		}
     }
@@ -246,8 +301,14 @@ void ofApp::keyPressed(int key){
 		cam.reset();
 	}
 
-    this->createSegmentedMesh(ofVec3f(0,0,0), 250, precision, longMin, longMax, latMin, latMax);
+#if STATIC_IMAGE	
+	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, img.getWidth(), img.getHeight(), longMin, longMax, latMin, latMax);
+#endif
 
+#if VIDEO
+	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, vW, vH, longMin, longMax, latMin, latMax);
+#endif	
+    
 }
 
 //--------------------------------------------------------------
