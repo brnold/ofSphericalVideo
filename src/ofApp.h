@@ -3,9 +3,11 @@
 #include "ofMain.h"
 #include "ofxGstRTPClient.h"
 #include "ofxGstRTPServer.h"
+#include "ofxOculusDK2.h"
 
 #define STATIC_IMAGE 0
 #define VIDEO 1
+#define OCULUS_YAH 1
 
 class ofApp : public ofBaseApp{
 
@@ -15,6 +17,7 @@ public:
     void draw();
     
     void createSegmentedMesh(const ofVec3f& center,
+                            ofMesh &mesh,
                              double radius,
                              int precision,
                              int textWidth,
@@ -40,13 +43,19 @@ public:
     void keyPressed(int key);
     void keyReleased(int key);
     //for Gstreamer
-    ofxGstRTPClient client1;
-    ofTexture texture1;
+    ofxGstRTPClient client1, client2;
+    ofTexture texture1, texture2;
     //end for gstreamer
 
+    //for Occulus
+    void drawScene(int side);
+    //void drawSceneVideo(int side);
+    ofxOculusDK2        oculusRift;
+    //end for occulus
 
 
-    ofMesh mesh;
+
+    ofMesh mesh1, mesh2;
     ofEasyCam cam;
     
     double latMin, latMax;

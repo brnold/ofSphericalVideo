@@ -3,11 +3,35 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSetVerticalSync(true);
 
+	#if OCULUS_YAH
+
+	oculusRift.baseCamera = &cam; //attach to your camera
+    //opens the device, an Oculus must be plugged in 
+    //as it uses the params returned from the head set to configure 
+    //the resolution settings
+    oculusRift.setup();
+
+    ofSetVerticalSync(true);
 	
-	fov = 40;
-	precision = 2000;
+	// this uses depth information for occlusion
+	// rather than always drawing things on top of each other
+	ofEnableDepthTest();
+
+	//ofEnableNormalizedTexCoords();
+	
+	// this sets the camera's distance from the object
+	cam.setDistance(25);
+
+
+   // ofSetFrameRate(75);
+
+#endif
+
+  
+	
+	fov = 180;
+	precision = 1500;
 	radius = 5000;
 	
 	// initial calculation of segment size
@@ -18,29 +42,33 @@ void ofApp::setup(){
     img.setUseTexture(true);
 	img.loadImage("0.jpg");
 	ratio = img.getHeight()/(double) img.getWidth();
-	//ratio = 3 / (double) 4;
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
 	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, img.getWidth(), img.getHeight(), longMin, longMax, latMin, latMax);
 #endif
 
 #if VIDEO
-	 vW = 1920;
-	 vH = 1080;
+	vW = 1920;
+	vH = 1080;
 	texture1.allocate(vW,vH,GL_RGB);
-	//texture2.allocate(vW,vH,GL_RGB);
+	texture2.allocate(vW,vH,GL_RGB);
 
 	client1.setup(10);
 	client1.addVideoChannel(5000);
-	//client2.setup(10);
-	//client2.addVideoChannel(5001);
+	client2.setup(10);
+	client2.addVideoChannel(5001);
 	client1.play();
-	//client2.play();
+	client2.play();
 	ratio = vH/ (double) vW;
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
-	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, vW, vH, longMin, longMax, latMin, latMax);
+	this->createSegmentedMesh(ofVec3f(0,0,0), mesh1, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
+	this->createSegmentedMesh(ofVec3f(0,0,0), mesh2, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 #endif	
+
+
+
+
 
 	// generate segment
 	//this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, width, height, longMin, longMax, latMin, latMax);
@@ -52,13 +80,13 @@ void ofApp::update(){
 
 
 	client1.update();
-	//client2.update();
+	client2.update();
 	
 	if(!STATIC_IMAGE){
 		if(client1.isFrameNewVideo()){
 			texture1.loadData(client1.getPixelsVideo());
 			//temp
-			//texture2.loadData(client1.getPixelsVideo());
+			texture2.loadData(client1.getPixelsVideo());
 		}
 
 
@@ -73,51 +101,39 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     
-	ofBackgroundGradient(ofColor(128), ofColor(0));
+	//ofBackgroundGradient(ofColor(128), ofColor(50));
     
     cam.begin();
-	ofEnableAlphaBlending();
-
-	ofPushMatrix();
-	ofRotateY(180);
-	
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
 	
 	// bind texture and draw our segment
-    ofSetColor(255, 150);
-   
-#if STATIC_IMAGE    
-    if (img.isAllocated()) img.bind();
-    mesh.draw();
-    if (img.isAllocated()) img.unbind();
-#endif
+    //ofSetColor(255, 150);
+	//ofBackground(100,100,100);   
+    
+    if(OCULUS_YAH == 1){
+	    oculusRift.beginLeftEye();
+	    drawScene(0);
+	    oculusRift.endLeftEye();
 
-#if VIDEO
-	texture1.bind();
-	mesh.draw();
-	texture1.unbind();
-#endif	
-	// draw transparent sphere as guide
-	//ofSetColor(255, 25);
-	//ofDrawSphere(0, 0, 250);
-	
-	//ofSetColor(200, 0, 0, 50);
-	//ofDrawSphere(0, 0, 5);
-	
-	//this->drawFrustum();
+	    oculusRift.beginRightEye(); 
+	    drawScene(1);  
+	    oculusRift.endRightEye();
+	}else{
 
-	glDisable(GL_CULL_FACE);
+
+	drawScene(1);
+    }
+	//glDisable(GL_CULL_FACE);
 	
-	ofPopMatrix();
-	
-	ofDisableAlphaBlending();
+
+    
     cam.end();
 
 	// draw image
-	ofSetColor(255, 255);
+	//ofSetColor(255, 255);
 	//img.draw(0, 0, img.getWidth(), img.getHeight());
 	
+	oculusRift.draw();
+/*
 	// some info
 	std::stringstream info;
 	info << "FOV: " << ofToString(fov) << endl
@@ -131,9 +147,115 @@ void ofApp::draw(){
 	<< "-> SPACE to reset" << endl;
 	
 	ofDrawBitmapStringHighlight(info.str(), ofGetWidth()-400, 20);
+	*/
 }
 
+void ofApp::drawScene(int side){
+
+	ofEnableAlphaBlending();
+
+	
+
+	ofPushMatrix();
+	ofRotateY(180);
+	
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	
+if(side == 1){
+	#if STATIC_IMAGE    
+	    if (img.isAllocated()) img.bind();
+	    mesh1.draw();
+	    if (img.isAllocated()) img.unbind();
+	#endif
+
+	#if VIDEO
+		texture1.bind();
+		mesh1.draw();
+		texture1.unbind();
+	#endif	
+
+} else{
+	#if STATIC_IMAGE    
+	    if (img.isAllocated()) img.bind();
+	    mesh2.draw();
+	    if (img.isAllocated()) img.unbind();
+	#endif
+
+	#if VIDEO
+		texture2.bind();
+		mesh2.draw();
+		texture2.unbind();
+	#endif	
+    
+}
+
+	ofPopMatrix();
+	
+	ofDisableAlphaBlending();
+
+}
+
+/*//temp, brought over for debugging
+void ofApp::drawSceneVideo(int side){
+	//ofBackground(74, 88, 150);
+
+
+    ofPushMatrix();
+	ofRotate(90, 0, 0, -10);
+    ofDrawGridPlane(100.0f, 2.0f, false );
+	ofPopMatrix();
+
+
+	ofPushMatrix();
+	
+
+	ofVec3f pos(
+		0,
+		0,
+		0);
+	
+	float planeSize = 9000;
+	
+	
+	ofTranslate(pos);
+	ofRotateX(pos.x);
+	ofRotateY(pos.y);
+	ofRotateZ(pos.z);
+	
+	ofEnableDepthTest();
+
+	if(side == 0){ // left eye
+		texture1.bind();
+		ofFill();
+		//mesh.draw();
+		ofDrawSphere(0,0,1080);
+		texture1.unbind();
+
+		//ofSetColor(255);
+		//ofDrawSphere(0,0,0,planeSize);
+		
+		
+	}else{ //right eye
+
+	texture1.bind();
+	ofFill();
+	//ofSetColor(255);
+	ofDrawBox(0,0,0,108,100, 0);
+	//ofDrawSphere(0,0,1080);
+	texture1.unbind();
+		
+	}	
+	ofDisableDepthTest();	
+	//ofNoFill();
+	//ofSetColor(ofColor::fromHsb(sinf(t) * 128 + 128, 255, 255));
+	//ofDrawBox(planeSize * 1.1f);
+	
+	ofPopMatrix();
+}*/
+
 void ofApp::createSegmentedMesh(const ofVec3f& center,
+								ofMesh &mesh,
                                 double radius,
                                 int precision,
                                 int textWidth,
@@ -300,13 +422,21 @@ void ofApp::keyPressed(int key){
 		this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
 		cam.reset();
 	}
-
+	else if (key == 'F' || key == 'f')
+	{
+		ofToggleFullscreen();
+	}
+	else if (key == 'Q' || key == 'q')
+	{
+		oculusRift.dismissSafetyWarning();
+	}
 #if STATIC_IMAGE	
-	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, img.getWidth(), img.getHeight(), longMin, longMax, latMin, latMax);
+	this->createSegmentedMesh(ofVec3f(0,0,0), mesh1, radius, precision, img.getWidth(), img.getHeight(), longMin, longMax, latMin, latMax);
 #endif
 
 #if VIDEO
-	this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, vW, vH, longMin, longMax, latMin, latMax);
+	this->createSegmentedMesh(ofVec3f(0,0,0), mesh1, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
+	this->createSegmentedMesh(ofVec3f(0,0,0), mesh2, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 #endif	
     
 }
