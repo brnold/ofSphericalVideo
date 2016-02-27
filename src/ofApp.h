@@ -7,7 +7,7 @@
 
 #define STATIC_IMAGE 0
 #define VIDEO 1
-#define OCULUS_YAH 1
+#define OCULUS_YAH 0
 
 class ofApp : public ofBaseApp{
 
@@ -37,6 +37,16 @@ public:
                                           double * latMax,
                                           double * longMin,
                                           double * longMax);
+
+    void createSegmentedMeshMine(const ofVec3f& center,
+                                ofMesh &mesh,
+                                double radius,
+                                int precision,
+                                int textWidth,
+                                int textHeight,
+                                double theta1, double theta2,
+                                double phi1, double phi2);
+
     
     void drawFrustum();
 

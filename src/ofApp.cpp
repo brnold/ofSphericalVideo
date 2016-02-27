@@ -32,7 +32,8 @@ void ofApp::setup(){
 	
 	fov = 180;
 	precision = 1500;
-	radius = 5000;
+	//radius = 5000;
+	radius = 1920/2;
 	
 	// initial calculation of segment size
 	//this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
@@ -62,7 +63,7 @@ void ofApp::setup(){
 	ratio = vH/ (double) vW;
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
-	this->createSegmentedMesh(ofVec3f(0,0,0), mesh1, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
+	this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh1, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 	this->createSegmentedMesh(ofVec3f(0,0,0), mesh2, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 #endif	
 
@@ -291,6 +292,7 @@ void ofApp::createSegmentedMesh(const ofVec3f& center,
         t2 = phi1 + (j + 1) * (phi2 - phi1) / (precision/2);
 
         mesh.setMode(OF_PRIMITIVE_POINTS );
+        //mesh.setMode( OF_PRIMITIVE_LINE_STRIP);
         
         for (i=0;i<=precision;i++) {
             t3 = theta1 + i * (theta2 - theta1) / precision;
@@ -318,6 +320,131 @@ void ofApp::createSegmentedMesh(const ofVec3f& center,
             mesh.addVertex(p);
 		}
     }
+}
+
+void ofApp::createSegmentedMeshMine(const ofVec3f& center,
+								ofMesh &mesh,
+                                double radius,
+                                int precision,
+                                int textWidth,
+                                int textHeight,
+                                double theta1, double theta2,
+                                double phi1, double phi2)
+{
+
+	int h, w;
+	double theta, phi, phi_1;
+	ofVec3f e,p;
+
+	    mesh.clear();
+
+	//Handle special cases 
+    if (radius < 0)
+        radius = -radius;
+    if (precision < 0)
+        precision = -precision;
+    if (precision < 4 || radius <= 0) {
+        mesh.addVertex(center);
+        return;
+    }
+
+	mesh.setupIndicesAuto();
+	
+	for(h = 0; h < textHeight; h++)
+	{
+		mesh.setMode( OF_PRIMITIVE_TRIANGLE_STRIP);
+
+		phi = (h * 3.141)/(double) textHeight;
+		phi_1 = ((h+1) * 3.141)/(double) textHeight;
+
+		for(w = 0; w <= textWidth; w++)
+		{
+
+			theta = (3.141 * w) / (double) textWidth ;
+			//ofLog(OF_LOG_VERBOSE, ofToString(theta));
+           // e.x = radius * cos(theta);
+            //e.y = h;
+            //e.z = radius * sin(theta);
+            p.x = radius * cos(theta);
+            p.y = radius * sin(phi);
+            //p.y = h;
+            p.z = radius * sin(theta);
+            //mesh.addNormal(e);
+            mesh.addTexCoord(ofVec2f(w, h));
+            mesh.addVertex(p);
+
+            //e.x = radius *cos(theta);
+            //e.y = h+1;
+            //e.z = radius * sin(theta);
+            p.x = radius *cos(theta);
+            p.y = radius * sin (phi_1);
+            //p.y = h+1;
+            p.z = radius * sin(theta);
+            //mesh.addNormal(e);
+            mesh.addTexCoord(ofVec2f(w, h+1));
+            mesh.addVertex(p);
+
+		}
+		
+	}
+
+
+    /*
+     Create a sphere centered at c, with radius r, and precision n
+     Draw a point for zero radius spheres
+     Use CCW facet ordering
+     Partial spheres can be created using theta1->theta2, phi1->phi2
+     in radians 0 < theta < 2pi, -pi/2 < phi < pi/2
+     
+    int i,j;
+    double t1,t2,t3;
+    ofVec3f e,p;
+    
+    mesh.clear();
+
+	//Handle special cases 
+    if (radius < 0)
+        radius = -radius;
+    if (precision < 0)
+        precision = -precision;
+    if (precision < 4 || radius <= 0) {
+        mesh.addVertex(center);
+        return;
+    }
+    
+    for (j=0;j<precision/2;j++) {
+        t1 = phi1 + j * (phi2 - phi1) / (precision/2);
+        t2 = phi1 + (j + 1) * (phi2 - phi1) / (precision/2);
+
+        //mesh.setMode(OF_PRIMITIVE_POINTS );
+        mesh.setMode( OF_PRIMITIVE_LINE_STRIP);
+        
+        for (i=0;i<=precision;i++) {
+            t3 = theta1 + i * (theta2 - theta1) / precision;
+            
+            e.x = cos(t1) * cos(t3);
+            e.y = sin(t1);
+            e.z = cos(t1) * sin(t3);
+            p.x = center.x + radius * e.x;
+            p.y = center.y + radius * e.y;
+            p.z = center.z + radius * e.z;
+            //mesh.addNormal(e);
+            mesh.addTexCoord(ofVec2f( (i/(double)precision) * textWidth,
+                                      textHeight - (2*j/(double)precision) * textHeight));
+            mesh.addVertex(p);
+            
+            e.x = cos(t2) * cos(t3);
+            e.y = sin(t2);
+            e.z = cos(t2) * sin(t3);
+            p.x = center.x + radius * e.x;
+            p.y = center.y + radius * e.y;
+            p.z = center.z + radius * e.z;
+            //mesh.addNormal(e);
+            mesh.addTexCoord(ofVec2f( (i/(double)precision) * textWidth,
+                                      textHeight - (2*(j+1)/(double)precision) * textHeight));
+            mesh.addVertex(p);
+		}
+    }*/
 }
 
 void ofApp::calculateFrustumSphereIntersects(double fov,
