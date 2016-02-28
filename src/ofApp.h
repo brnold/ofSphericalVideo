@@ -5,9 +5,9 @@
 #include "ofxGstRTPServer.h"
 #include "ofxOculusDK2.h"
 
-#define STATIC_IMAGE 0
-#define VIDEO 1
-#define OCULUS_YAH 0
+#define STATIC_IMAGE 1
+#define VIDEO 0
+#define OCULUS_YAH 1
 
 class ofApp : public ofBaseApp{
 
@@ -41,11 +41,9 @@ public:
     void createSegmentedMeshMine(const ofVec3f& center,
                                 ofMesh &mesh,
                                 double radius,
-                                int precision,
+                               
                                 int textWidth,
-                                int textHeight,
-                                double theta1, double theta2,
-                                double phi1, double phi2);
+                                int textHeight);
 
     
     void drawFrustum();
@@ -74,5 +72,5 @@ public:
     double fov, ratio, precision, radius;
     int vW, vH;
     
-    ofImage img;
+    ofImage img, img2;
 };
