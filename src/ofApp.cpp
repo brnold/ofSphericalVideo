@@ -49,7 +49,7 @@ void ofApp::setup(){
 	this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh1, radius, img.getWidth(), img.getHeight());
 	
 	img2.setUseTexture(true);
-	img2.loadImage("0_l.jpg");
+	img2.loadImage("0_r.jpg");
 	ratio = img2.getHeight()/(double) img2.getWidth();
 
 
