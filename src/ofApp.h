@@ -44,6 +44,12 @@ public:
                                
                                 int textWidth,
                                 int textHeight);
+    void createSegmentedMeshTriangles(const ofVec3f& center,
+                                ofMesh &mesh,
+                                double radius,
+                               
+                                int textWidth,
+                                int textHeight);
 
     
     void drawFrustum();

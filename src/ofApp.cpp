@@ -46,14 +46,14 @@ void ofApp::setup(){
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
 	//this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, img.getWidth(), img.getHeight(), longMin, longMax, latMin, latMax);
-	this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh1, radius, img.getWidth(), img.getHeight());
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, img.getWidth(), img.getHeight());
 	
 	img2.setUseTexture(true);
 	img2.loadImage("0_r.jpg");
 	ratio = img2.getHeight()/(double) img2.getWidth();
 
 
-	this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh2, radius, img2.getWidth(), img2.getHeight());
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, img2.getWidth(), img2.getHeight());
 #endif
 
 #if VIDEO
@@ -71,8 +71,8 @@ void ofApp::setup(){
 	ratio = vH/ (double) vW;
 	// initial calculation of segment size
 	//this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
-	this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh1, radius, vW, vH);
-	this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh2, radius, vW, vH);
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, vW, vH);
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, vW, vH);
 	//this->createSegmentedMesh(ofVec3f(0,0,0), mesh2, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 
 #endif	
@@ -207,7 +207,7 @@ if(side == 1){ //right
 	
 	ofDisableAlphaBlending();
 
-	//glDisable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
 
 }
 
@@ -342,7 +342,7 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
                                 int textWidth,
                                 int textHeight)
 {
-
+	//uses triangle strips
 	int h, hTemp, w;
 	double theta, phi, phi_1, limitH, limitW;
 	ofVec3f p;
@@ -360,6 +360,9 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
     }
 
 	//mesh.setupIndicesAuto();
+
+	textWidth = textWidth / 4;
+	textHeight = textHeight / 4;
 	
 	mesh.setMode( OF_PRIMITIVE_TRIANGLE_STRIP);
 
@@ -389,7 +392,7 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
             p.y = radius* sin(theta)*sin(phi);
             p.z = radius*cos(phi);
    
-            mesh.addTexCoord(ofVec2f(w, h));
+            mesh.addTexCoord(ofVec2f(4*w, 4*h));
             mesh.addVertex(p);
 
             //p.x = radius *cos(theta);
@@ -399,7 +402,7 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
             p.y = radius* sin(theta)*sin(phi_1);
             p.z = radius*cos(phi_1);
 
-            mesh.addTexCoord(ofVec2f(w, h+1));
+            mesh.addTexCoord(ofVec2f(4*w, (4*h)+1));
             mesh.addVertex(p);
 
 		}
@@ -427,20 +430,22 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
 		}
 		
 	}
+}
 
+void ofApp::createSegmentedMeshTriangles(const ofVec3f& center,
+                            ofMesh &mesh,
+                            double radius,
+                           
+                            int textWidth,
+                            int textHeight)
+	//using triangles only
+{
 
-    /*
-     Create a sphere centered at c, with radius r, and precision n
-     Draw a point for zero radius spheres
-     Use CCW facet ordering
-     Partial spheres can be created using theta1->theta2, phi1->phi2
-     in radians 0 < theta < 2pi, -pi/2 < phi < pi/2
-     
-    int i,j;
-    double t1,t2,t3;
-    ofVec3f e,p;
-    
-    mesh.clear();
+	long h, hTemp, w;
+	double theta, phi, phi_1, limitH, limitW;
+	ofVec3f p;
+
+	mesh.clear();
 
 	//Handle special cases 
     if (radius < 0)
@@ -449,42 +454,59 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
         precision = -precision;
     if (precision < 4 || radius <= 0) {
         mesh.addVertex(center);
-        return;
+    return;
     }
-    
-    for (j=0;j<precision/2;j++) {
-        t1 = phi1 + j * (phi2 - phi1) / (precision/2);
-        t2 = phi1 + (j + 1) * (phi2 - phi1) / (precision/2);
 
-        //mesh.setMode(OF_PRIMITIVE_POINTS );
-        mesh.setMode( OF_PRIMITIVE_LINE_STRIP);
+	mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+
+	limitH = 3.14 / (double) 3;
+	limitW = limitH * (textWidth/(double)textHeight);
+
+
+
+	for(h = 0; h < textHeight; h = h+2)
+	//create the mesh
+	{
+		phi = ((h * limitH)/(double) textHeight) + (1.57079632679 - (limitH/ (double )2));
+		//phi_1 = (((h+1) * limitH)/(double) textHeight) + (1.57079632679 - (limitH/ (double )2));
+
+		for(w = 0; w <= textWidth; w = w+2) //count forward
+		{
+		
+			theta = (limitW * w) / (double) textWidth + (1.57079632679 - (limitW/ (double )2));
+			
         
-        for (i=0;i<=precision;i++) {
-            t3 = theta1 + i * (theta2 - theta1) / precision;
+
+            p.x = radius*cos(theta)*sin(phi);
+            p.y = radius* sin(theta)*sin(phi);
+            p.z = radius*cos(phi);
+   			
+   			//p.x = w;
+            ///p.y = 2;
+            //p.z = h;
+
+   			mesh.addVertex(p);
+            mesh.addTexCoord(ofVec2f(w, h));
             
-            e.x = cos(t1) * cos(t3);
-            e.y = sin(t1);
-            e.z = cos(t1) * sin(t3);
-            p.x = center.x + radius * e.x;
-            p.y = center.y + radius * e.y;
-            p.z = center.z + radius * e.z;
-            //mesh.addNormal(e);
-            mesh.addTexCoord(ofVec2f( (i/(double)precision) * textWidth,
-                                      textHeight - (2*j/(double)precision) * textHeight));
-            mesh.addVertex(p);
-            
-            e.x = cos(t2) * cos(t3);
-            e.y = sin(t2);
-            e.z = cos(t2) * sin(t3);
-            p.x = center.x + radius * e.x;
-            p.y = center.y + radius * e.y;
-            p.z = center.z + radius * e.z;
-            //mesh.addNormal(e);
-            mesh.addTexCoord(ofVec2f( (i/(double)precision) * textWidth,
-                                      textHeight - (2*(j+1)/(double)precision) * textHeight));
-            mesh.addVertex(p);
+
 		}
-    }*/
+		
+	}
+	mesh.clearIndices();
+	for (int y = 0; y<textHeight-2; y = y+1){
+	    for (int x=0; x<textWidth-2; x = x + 1){
+	        mesh.addIndex(x+y*textWidth);               // 0
+	        mesh.addIndex((x+1)+y*textWidth);           // 1
+	        mesh.addIndex(x+(y+1)*textWidth);           // 10
+
+	        mesh.addIndex((x+1)+y*textWidth);           // 1
+	        mesh.addIndex((x+1)+(y+1)*textWidth);       // 11
+	        mesh.addIndex(x+(y+1)*textWidth);           // 10
+	    }
+	}
+
+
+
 }
 
 void ofApp::calculateFrustumSphereIntersects(double fov,
@@ -605,8 +627,8 @@ void ofApp::keyPressed(int key){
 #if VIDEO
 	//this->createSegmentedMesh(ofVec3f(0,0,0), mesh1, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 	//this->createSegmentedMesh(ofVec3f(0,0,0), mesh2, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
-    this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh1, radius, vW, vH);
-	this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh2, radius, vW, vH);
+    this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, vW, vH);
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, vW, vH);
 #endif	
     
 }
