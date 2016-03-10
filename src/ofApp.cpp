@@ -4,7 +4,7 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 
-	#if OCULUS_YAH
+#if OCULUS_YAH
 
 	oculusRift.baseCamera = &cam; //attach to your camera
     //opens the device, an Oculus must be plugged in 
@@ -16,7 +16,7 @@ void ofApp::setup(){
 	
 	// this uses depth information for occlusion
 	// rather than always drawing things on top of each other
-	ofEnableDepthTest();
+	//ofEnableDepthTest();
 
 	//ofEnableNormalizedTexCoords();
 	
@@ -34,6 +34,7 @@ void ofApp::setup(){
 	precision = 1500;
 	//radius = 5000;
 	radius = 100;
+	limitH = 1.75;
 	
 	// initial calculation of segment size
 	//this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
@@ -41,24 +42,27 @@ void ofApp::setup(){
 
 #if STATIC_IMAGE	
     img.setUseTexture(true);
-	img.loadImage("0_r.jpg");
+	img.loadImage("cam.jpg");
 	ratio = img.getHeight()/(double) img.getWidth();
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
 	//this->createSegmentedMesh(ofVec3f(0,0,0), radius, precision, img.getWidth(), img.getHeight(), longMin, longMax, latMin, latMax);
-	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, img.getWidth(), img.getHeight());
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, limitH, img.getWidth(), img.getHeight());
 	
 	img2.setUseTexture(true);
-	img2.loadImage("0_r.jpg");
+	img2.loadImage("cam.jpg");
 	ratio = img2.getHeight()/(double) img2.getWidth();
 
 
-	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, img2.getWidth(), img2.getHeight());
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, limitH, img2.getWidth(), img2.getHeight());
 #endif
 
 #if VIDEO
-	vW = 1920;
-	vH = 1080;
+	//vW = 1920;
+	//vH = 1080;
+	vW = 1296;
+	vH = 972;
+
 	texture1.allocate(vW,vH,GL_RGB);
 	texture2.allocate(vW,vH,GL_RGB);
 
@@ -71,8 +75,8 @@ void ofApp::setup(){
 	ratio = vH/ (double) vW;
 	// initial calculation of segment size
 	//this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
-	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, vW, vH);
-	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, vW, vH);
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, limitH, vW, vH);
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, limitH, vW, vH);
 	//this->createSegmentedMesh(ofVec3f(0,0,0), mesh2, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 
 #endif	
@@ -175,39 +179,39 @@ void ofApp::drawScene(int side){
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	
-if(side == 1){ //right
-	#if STATIC_IMAGE    
-	    if (img.isAllocated()) img.bind();
-	    mesh1.draw();
-	    if (img.isAllocated()) img.unbind();
-	#endif
+	if(side == 1){ //right
+		#if STATIC_IMAGE    
+		    if (img.isAllocated()) img.bind();
+		    mesh1.draw();
+		    if (img.isAllocated()) img.unbind();
+		#endif
 
-	#if VIDEO
-		texture1.bind();
-		mesh1.draw();
-		texture1.unbind();
-	#endif	
+		#if VIDEO
+			texture1.bind();
+			mesh1.draw();
+			texture1.unbind();
+		#endif	
 
-} else{ //left
-	#if STATIC_IMAGE    
-	    if (img.isAllocated()) img2.bind();
-	    mesh2.draw();
-	    if (img.isAllocated()) img2.unbind();
-	#endif
+	} else{ //left
+		#if STATIC_IMAGE    
+		    if (img.isAllocated()) img2.bind();
+		    mesh2.draw();
+		    if (img.isAllocated()) img2.unbind();
+		#endif
 
-	#if VIDEO
-		texture2.bind();
-		mesh2.draw();
-		texture2.unbind();
-	#endif	
-    
-}
+		#if VIDEO
+			texture2.bind();
+			mesh2.draw();
+			texture2.unbind();
+		#endif	
+	    
+	}
 
 	ofPopMatrix();
 	
 	ofDisableAlphaBlending();
 
-	glDisable(GL_CULL_FACE);
+	//glDisable(GL_CULL_FACE);
 
 }
 
@@ -435,14 +439,15 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
 void ofApp::createSegmentedMeshTriangles(const ofVec3f& center,
                             ofMesh &mesh,
                             double radius,
-                           
+                           	double limitH,
                             int textWidth,
                             int textHeight)
 	//using triangles only
 {
 
-	long h, hTemp, w;
-	double theta, phi, phi_1, limitH, limitW;
+	int h, drawH, drawW, w;
+	int divNumber = 32;
+	double theta, phi, phi_1, limitW;
 	ofVec3f p;
 
 	mesh.clear();
@@ -459,49 +464,67 @@ void ofApp::createSegmentedMeshTriangles(const ofVec3f& center,
 
 	mesh.setMode(OF_PRIMITIVE_TRIANGLES);
 
-	limitH = 3.14 / (double) 3;
+	//limitH = 3.14 / (double) hDivNumber;
+	
 	limitW = limitH * (textWidth/(double)textHeight);
 
+	drawH = textHeight / divNumber;
+	drawW = textWidth / divNumber;
 
-
-	for(h = 0; h < textHeight; h = h+2)
+	for(h = 0; h < drawH;  h++)
 	//create the mesh
 	{
-		phi = ((h * limitH)/(double) textHeight) + (1.57079632679 - (limitH/ (double )2));
+		phi = (((h * divNumber) * limitH)/(double) textHeight) + (1.57079632679 - (limitH/ (double )2));
 		//phi_1 = (((h+1) * limitH)/(double) textHeight) + (1.57079632679 - (limitH/ (double )2));
 
-		for(w = 0; w <= textWidth; w = w+2) //count forward
+		for(w = 1; w <= drawW; w++) //count forward
 		{
 		
-			theta = (limitW * w) / (double) textWidth + (1.57079632679 - (limitW/ (double )2));
-			
-        
+			theta = (limitW * (w * divNumber)) / (double) textWidth + (1.57079632679 - (limitW/ (double )2));
 
             p.x = radius*cos(theta)*sin(phi);
             p.y = radius* sin(theta)*sin(phi);
             p.z = radius*cos(phi);
    			
-   			//p.x = w;
-            ///p.y = 2;
-            //p.z = h;
-
+   			/*p.x = w;
+            p.y = 2;
+            p.z = h;*/
+            mesh.addTexCoord(ofVec2f((w*divNumber), (h*divNumber)));
    			mesh.addVertex(p);
-            mesh.addTexCoord(ofVec2f(w, h));
+            
             
 
 		}
 		
 	}
-	mesh.clearIndices();
-	for (int y = 0; y<textHeight-2; y = y+1){
-	    for (int x=0; x<textWidth-2; x = x + 1){
-	        mesh.addIndex(x+y*textWidth);               // 0
-	        mesh.addIndex((x+1)+y*textWidth);           // 1
-	        mesh.addIndex(x+(y+1)*textWidth);           // 10
+	
+	/*for (int y = 0; y<drawH; y = y+1){
+	    for (int x=0; x<drawW; x = x + 1){
+	    	const ofIndexType texIndex = static_cast<ofIndexType>(x + y*drawW);
+	    	mesh.setTexCoord(texIndex, ofVec2f((w*divNumber), (h*divNumber)));
 
-	        mesh.addIndex((x+1)+y*textWidth);           // 1
-	        mesh.addIndex((x+1)+(y+1)*textWidth);       // 11
-	        mesh.addIndex(x+(y+1)*textWidth);           // 10
+	    }
+	}*/
+
+
+	//mesh.clearIndices();
+	
+	for (int y = 0; y<drawH-1; y = y+1){
+	    for (int x=0; x<drawW-1; x++){
+	        mesh.addIndex(x+y*drawW);               // 0
+	        mesh.addIndex(x+(y+1)*drawW);           // 10
+	        mesh.addIndex((x+1)+(y+1)*drawW);       // 11
+	       // mesh.addIndex(x);               // 0
+	        //mesh.addIndex(x+drawW);           // 10
+	        //mesh.addIndex((x+1)+drawW);       // 11
+	        
+	        mesh.addIndex((x+1)+y*drawW);           // 1
+	        mesh.addIndex(x+y*drawW);               // 0
+	        mesh.addIndex((x+1)+(y+1)*drawW);       // 11
+	       
+	        
+	        
+	        
 	    }
 	}
 
@@ -580,15 +603,13 @@ void ofApp::keyPressed(int key){
     }
     else if (key == OF_KEY_DOWN)
     {
-		double diff = latMax - latMin;
-        latMin = MAX( (latMin -= 0.1), -HALF_PI);
-		latMax = latMin + diff;
+		limitH = limitH - 0.05;
+		ofLog(OF_LOG_VERBOSE, "limitH is %f", limitH); 
     }
     else if (key == OF_KEY_UP)
     {
-		double diff = latMax - latMin;
-		latMin = MIN( (latMin += 0.1), HALF_PI);
-		latMax = latMin + diff;
+		limitH = limitH + 0.05;
+		ofLog(OF_LOG_VERBOSE, "limitH is %f", limitH); 
     }
 	else if (key == 'r')
 	{
@@ -627,8 +648,8 @@ void ofApp::keyPressed(int key){
 #if VIDEO
 	//this->createSegmentedMesh(ofVec3f(0,0,0), mesh1, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
 	//this->createSegmentedMesh(ofVec3f(0,0,0), mesh2, radius, precision, vW, vH, longMin, longMax, latMin, latMax);
-    this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, vW, vH);
-	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, vW, vH);
+    this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, limitH, vW, vH);
+	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh2, radius, limitH, vW, vH);
 #endif	
     
 }

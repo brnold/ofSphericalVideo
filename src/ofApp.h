@@ -5,9 +5,9 @@
 #include "ofxGstRTPServer.h"
 #include "ofxOculusDK2.h"
 
-#define STATIC_IMAGE 1
-#define VIDEO 0
-#define OCULUS_YAH 0
+#define STATIC_IMAGE 0
+#define VIDEO 1
+#define OCULUS_YAH 1
 
 class ofApp : public ofBaseApp{
 
@@ -47,7 +47,7 @@ public:
     void createSegmentedMeshTriangles(const ofVec3f& center,
                                 ofMesh &mesh,
                                 double radius,
-                               
+                                double limitH,
                                 int textWidth,
                                 int textHeight);
 
@@ -74,6 +74,7 @@ public:
     
     double latMin, latMax;
     double longMin, longMax;
+    double limitH;
     
     double fov, ratio, precision, radius;
     int vW, vH;
