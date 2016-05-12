@@ -5,9 +5,10 @@
 #include "ofxGstRTPServer.h"
 #include "ofxOculusDK2.h"
 
-#define STATIC_IMAGE 0
-#define VIDEO 1
+#define STATIC_IMAGE 1
+#define VIDEO 0
 #define OCULUS_YAH 1
+#define SIMPLE_SCENE 0
 
 class ofApp : public ofBaseApp{
 
@@ -79,5 +80,7 @@ public:
     double fov, ratio, precision, radius;
     int vW, vH;
     
+    int shiftAmountLR, shiftAmountUD;
+
     ofImage img, img2;
 };

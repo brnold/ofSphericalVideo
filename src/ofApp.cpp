@@ -24,7 +24,7 @@ void ofApp::setup(){
 	cam.setDistance(5);
 
 
-    ofSetFrameRate(75);
+    ofSetFrameRate(30);
 
 #endif
 
@@ -32,6 +32,8 @@ void ofApp::setup(){
 	
 	fov = 180;
 	precision = 1500;
+	shiftAmountLR = 0;
+	shiftAmountUD = 0;
 	//radius = 5000;
 	radius = 100;
 	limitH = 1.75;
@@ -42,7 +44,7 @@ void ofApp::setup(){
 
 #if STATIC_IMAGE	
     img.setUseTexture(true);
-	img.loadImage("cam.jpg");
+	img.loadImage("0_l.jpg"); //left
 	ratio = img.getHeight()/(double) img.getWidth();
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
@@ -50,7 +52,7 @@ void ofApp::setup(){
 	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, limitH, img.getWidth(), img.getHeight());
 	
 	img2.setUseTexture(true);
-	img2.loadImage("cam.jpg");
+	img2.loadImage("0_r.jpg"); //right
 	ratio = img2.getHeight()/(double) img2.getWidth();
 
 
@@ -102,6 +104,7 @@ void ofApp::update(){
 			texture1.loadData(client1.getPixelsVideo());
 			//temp
 			texture2.loadData(client1.getPixelsVideo());
+			ofResetElapsedTimeCounter();
 		}
 
 
@@ -136,6 +139,7 @@ void ofApp::draw(){
 
 
 	drawScene(1);
+	ofLog(OF_LOG_VERBOSE, "Time since last new frame %i", ofGetElapsedTimeMillis());
     }
 
 	
@@ -165,6 +169,39 @@ void ofApp::draw(){
 	*/
 }
 
+#if SIMPLE_SCENE
+
+void ofApp::drawScene(int side){
+
+	ofEnableAlphaBlending();
+
+	ofPushMatrix();
+	ofRotateX(90);
+	ofRotateZ(180);
+	ofTranslate(0, -75, 0);
+	
+
+	if(side == 0){ //left 
+		   ofDrawBox(0,0,0, 30);
+	
+
+
+	} else{ //right
+
+	   ofDrawBox(0,0,0, 30);
+	}
+
+	ofPopMatrix();
+	
+	ofDisableAlphaBlending();
+
+	//glDisable(GL_CULL_FACE);
+
+}
+
+
+#else
+
 void ofApp::drawScene(int side){
 
 	ofEnableAlphaBlending();
@@ -179,7 +216,7 @@ void ofApp::drawScene(int side){
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	
-	if(side == 1){ //right
+	if(side == 0){ //left
 		#if STATIC_IMAGE    
 		    if (img.isAllocated()) img.bind();
 		    mesh1.draw();
@@ -190,10 +227,14 @@ void ofApp::drawScene(int side){
 			texture1.bind();
 			mesh1.draw();
 			texture1.unbind();
-		#endif	
+		#endif		
 
-	} else{ //left
-		#if STATIC_IMAGE    
+	} else{ //right
+		
+	    
+	    #if STATIC_IMAGE   
+			ofPushMatrix();
+			ofTranslate(shiftAmountLR, 0, shiftAmountUD); 
 		    if (img.isAllocated()) img2.bind();
 		    mesh2.draw();
 		    if (img.isAllocated()) img2.unbind();
@@ -203,8 +244,7 @@ void ofApp::drawScene(int side){
 			texture2.bind();
 			mesh2.draw();
 			texture2.unbind();
-		#endif	
-	    
+		#endif
 	}
 
 	ofPopMatrix();
@@ -214,6 +254,8 @@ void ofApp::drawScene(int side){
 	//glDisable(GL_CULL_FACE);
 
 }
+
+#endif
 
 /*//temp, brought over for debugging
 void ofApp::drawSceneVideo(int side){
@@ -283,6 +325,7 @@ void ofApp::createSegmentedMesh(const ofVec3f& center,
                                 double phi1, double phi2)
 {
     /*
+     original funtion used as inspiration
      Create a sphere centered at c, with radius r, and precision n
      Draw a point for zero radius spheres
      Use CCW facet ordering
@@ -340,6 +383,9 @@ void ofApp::createSegmentedMesh(const ofVec3f& center,
     }
 }
 
+/*
+Old, beta function, use the triangle funtion now
+*/
 void ofApp::createSegmentedMeshMine(const ofVec3f& center,
 								ofMesh &mesh,
                                 double radius,
@@ -435,6 +481,11 @@ void ofApp::createSegmentedMeshMine(const ofVec3f& center,
 		
 	}
 }
+
+/*
+Creates a mesh around a sphere/
+
+*/
 
 void ofApp::createSegmentedMeshTriangles(const ofVec3f& center,
                             ofMesh &mesh,
@@ -591,36 +642,30 @@ void ofApp::keyPressed(int key){
     }
     else if (key == OF_KEY_LEFT)
     {
-		double diff = longMax-longMin;
-        longMin = MAX( (longMin -= 0.1), 0);
-		longMax = longMin + diff;
+		shiftAmountLR++;
     }
     else if (key == OF_KEY_RIGHT)
     {
-		double diff = longMax - longMin;
-		longMin = MIN( (longMin += 0.1), TWO_PI);
-		longMax = longMin + diff;
+		shiftAmountLR--;
     }
     else if (key == OF_KEY_DOWN)
     {
-		limitH = limitH - 0.05;
-		ofLog(OF_LOG_VERBOSE, "limitH is %f", limitH); 
+		shiftAmountUD--;
     }
     else if (key == OF_KEY_UP)
     {
-		limitH = limitH + 0.05;
-		ofLog(OF_LOG_VERBOSE, "limitH is %f", limitH); 
+		shiftAmountUD++;
     }
 	else if (key == 'r')
 	{
 		if (fov > 1) --fov;
 		this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
 	}
-	else if ( key == 'R')
-	{
-		if (fov < 180) ++fov;
-		this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
-	}
+	// else if ( key == 'R')
+	// {
+	// 	if (fov < 180) ++fov;
+	// 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
+	// }
 	else if (key == 'i')
 	{
 		cam.setDistance(1);
@@ -639,6 +684,10 @@ void ofApp::keyPressed(int key){
 	else if (key == 'Q' || key == 'q')
 	{
 		oculusRift.dismissSafetyWarning();
+	}
+	else if (key == 'R' || key == 'r')
+	{
+		oculusRift.reset();
 	}
 #if STATIC_IMAGE	
 	//this->createSegmentedMeshMine(ofVec3f(0,0,0), mesh1, radius, vW, vH);
