@@ -7,7 +7,7 @@
 
 #define STATIC_IMAGE 1
 #define VIDEO 0
-#define OCULUS_YAH 1
+#define OCULUS_YAH 0
 #define SIMPLE_SCENE 0
 
 class ofApp : public ofBaseApp{

@@ -44,7 +44,7 @@ void ofApp::setup(){
 
 #if STATIC_IMAGE	
     img.setUseTexture(true);
-	img.loadImage("0_l.jpg"); //left
+	img.loadImage("roomleft1.jpeg"); //left
 	ratio = img.getHeight()/(double) img.getWidth();
 	// initial calculation of segment size
 	this->calculateFrustumSphereIntersects(fov, ratio, &latMin, &latMax, &longMin, &longMax);
@@ -52,7 +52,7 @@ void ofApp::setup(){
 	this->createSegmentedMeshTriangles(ofVec3f(0,0,0), mesh1, radius, limitH, img.getWidth(), img.getHeight());
 	
 	img2.setUseTexture(true);
-	img2.loadImage("0_r.jpg"); //right
+	img2.loadImage("roomright1.jpeg"); //right
 	ratio = img2.getHeight()/(double) img2.getWidth();
 
 
@@ -169,7 +169,7 @@ void ofApp::draw(){
 	*/
 }
 
-#if SIMPLE_SCENE
+#if SIMPLE_SCENE == 1
 
 void ofApp::drawScene(int side){
 
@@ -182,13 +182,13 @@ void ofApp::drawScene(int side){
 	
 
 	if(side == 0){ //left 
-		   ofDrawBox(0,0,0, 30);
+		   ofDrawBox(0,0,0, 90);
 	
 
 
 	} else{ //right
 
-	   ofDrawBox(0,0,0, 30);
+	   ofDrawBox(0,0,0, 90);
 	}
 
 	ofPopMatrix();
@@ -200,7 +200,7 @@ void ofApp::drawScene(int side){
 }
 
 
-#else
+#elif SIMPLE_SCENE == 0
 
 void ofApp::drawScene(int side){
 
